@@ -3,24 +3,35 @@ name: Actualizar Google Sheet
 on:
   schedule:
     - cron: '0 0,4,8,12,16,20 * * *'  # Cada 4 horas (UTC)
-  workflow_dispatch:
+  workflow_dispatch:  # Permite ejecutar manualmente
 
 jobs:
   run-script:
     runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣ Descargar el repositorio
       - uses: actions/checkout@v3
 
+      # 2️⃣ Configurar Python
       - name: Configurar Python
         uses: actions/setup-python@v4
         with:
           python-version: 3.12
 
-      - name: Instalar dependencias
-        run: pip install -r ./requirements.txt
+      # 3️⃣ Listar archivos (opcional, para depuración)
+      - name: Listar archivos
+        run: ls -R
+        working-directory: ${{ github.workspace }}
 
+      # 4️⃣ Instalar dependencias
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+        working-directory: ${{ github.workspace }}
+
+      # 5️⃣ Ejecutar script
       - name: Ejecutar script
         run: python actualizar_sheets.py
+        working-directory: ${{ github.workspace }}
         env:
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
