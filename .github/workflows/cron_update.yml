@@ -3,7 +3,6 @@ name: Actualizar Google Sheet
 on:
   schedule:
     - cron: '0 0,4,8,12,16,20 * * *'  # Cada 4 horas (UTC)
-    - cron: '30 20 * * *'              # Extra: 16:10 hora Chile (20:10 UTC)
 
 jobs:
   run-script:
