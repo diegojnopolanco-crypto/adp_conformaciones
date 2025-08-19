@@ -1,10 +1,9 @@
 name: Actualizar Google Sheet
 
 on:
-  workflow_dispatch:   # Para ejecutarlo manualmente
   schedule:
     - cron: '0 0,4,8,12,16,20 * * *'  # Cada 4 horas (UTC)
-    - cron: '20 20 * * *'              # Extra: 16:10 hora Chile (20:10 UTC)
+    - cron: '23 20 * * *'              # Extra: 16:10 hora Chile (20:10 UTC)
 
 jobs:
   run-script:
