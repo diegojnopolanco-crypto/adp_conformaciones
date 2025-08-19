@@ -31,7 +31,7 @@ jobs:
 
       # 5️⃣ Ejecutar script
       - name: Ejecutar script
-        run: python actualizar_sheets.py
+        run: python adp_conformaciones.py
         working-directory: ${{ github.workspace }}
         env:
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
