@@ -62,7 +62,8 @@ SELECT
         WHEN 322 THEN 'Luis Zegers'
         WHEN 316 THEN 'Franco Castro'
     END AS updated_by_name,
-    (invoice_log.its AT TIME ZONE 'UTC' AT TIME ZONE 'America/Santiago') AS "Fecha"
+    (invoice_log.its AT TIME ZONE 'UTC' AT TIME ZONE 'America/Santiago') AS "Fecha",
+    invoice.pod_date
 FROM dobetter_unilever.dt
 JOIN dobetter_unilever.invoice
     ON dt.id = invoice.dt_id
@@ -148,6 +149,9 @@ no_presentados = solo_1[~solo_1["legal_number"].isin(con_otro_status)]
 
 # 4. Asignar description
 no_presentados["description"] = "((R0,F0,S0,NO PRESENTADO-SIN RESPONSABLE))"
+
+#Para las que están listas para procesar por Francis
+no_presentados.loc[no_presentados["pod_date"].notna(), "description"] = "((R0,F0,S0,CONFORMACION PENDIENTE-CAJA))"
 
 # Para CENCOSUD
 no_presentados.loc[
