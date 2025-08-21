@@ -94,6 +94,7 @@ except Exception as e:
     print(f"Error al ejecutar la consulta: {e}")
 
 dbs
+
 # dbs = resultado de la query
 
 #Hacer filtros comentados en la query
@@ -129,13 +130,11 @@ df_check = dbs[dbs["legal_number"].isin(ft_filtrados)]
 # 3️⃣ Encontrar legal_number que tienen status>2 en el df original
 dt_con_status = df_check[df_check["status"] > 2]["legal_number"].unique()
 
-# 4️⃣ Mantener solo los dt_number que NO tienen status=5
+# 4️⃣ Mantener solo los dt_number que NO tienen status>2
 df_filtrado_final = df_filtrado[~df_filtrado["legal_number"].isin(dt_con_status)]
 
 # Resultado
 df_filtrado_final
-
-
 
 #Registrar Status 1 (no presentado)
 # 1. Filtrar solo las filas con status = 1
@@ -147,6 +146,9 @@ con_otro_status = dbs.loc[dbs["status"] != 1, "legal_number"].unique()
 # 3. Quitar esos legal_number de nuestro filtrado
 no_presentados = solo_1[~solo_1["legal_number"].isin(con_otro_status)]
 
+# 4. Asignar description
+no_presentados["description"] = "((R0,F0,S0,NO PRESENTADO-SIN RESPONSABLE))"
+
 # Para CENCOSUD
 no_presentados.loc[
     no_presentados["cliente"] == "CENCOSUD RETAIL S A", "description"
@@ -156,14 +158,14 @@ no_presentados.loc[
 no_presentados.loc[
     no_presentados["cliente"] == "WALMART CHILE S A", "description"
 ] = "((R0,F0,S0,WALMART-Caja))"
-
+no_presentados
 
 #Registrar Status 3 (atados)
 # 1. Filtrar solo las filas con status = 3
 solo_3 = dbs[dbs["status"] == 3]
 
 # 2. Buscar los legal_number que en el df original tengan status distintos a 3
-con_otro_status = dbs.loc[dbs["status"] != 3, "legal_number"].unique()
+con_otro_status = dbs.loc[dbs["status"] > 3, "legal_number"].unique()
 
 # 3. Quitar esos legal_number de nuestro filtrado
 atadas = solo_3[~solo_3["legal_number"].isin(con_otro_status)]
@@ -171,9 +173,23 @@ atadas = solo_3[~solo_3["legal_number"].isin(con_otro_status)]
 # 4. Asignar description
 atadas["description"] = "((R0,F0,S0,ATADA-TTE UL Caja))"
 
+atadas
 
 df_final_total = pd.concat([df_filtrado_final, no_presentados, atadas], ignore_index=True)
+# Crear nueva columna solo con comentario objetivo
+df_final_total["desc_limpia"] = df_final_total["description"].str.extract(pattern)
 
+df_final_total["updated_by"] = df_final_total["updated_by"].fillna(0)
+
+#Ve los NaN
+df_final_total[df_final_total.isna().any(axis=1)]
+
+# Ordenar por dt_number, legal_number y Fecha descendente (más reciente primero)
+df_final_total = df_final_total.sort_values(["dt_number", "legal_number", "Fecha"], ascending=[True, True, False])
+
+# Mantener solo la primera fila de cada combinación dt_number + legal_number
+df_final_total = df_final_total.drop_duplicates(subset=["dt_number", "legal_number"], keep="first").reset_index(drop=True)
+df_final_total
 
 # Copiar DataFrame para no modificar el original
 df = df_final_total.copy()
@@ -204,8 +220,6 @@ df_filtrado_final['desc_limpia'] = df_filtrado_final['desc_limpia'].str.upper()
 # Seleccionamos solo las columnas que necesitamos
 df = df_filtrado_final[['dt_number','legal_number','status','updated_by_name','Fecha','desc_limpia']].copy()
 
-
-
 # Función para extraer los datos de desc_limpia
 def parse_desc(desc):
     # Quitar los doble paréntesis
@@ -224,13 +238,7 @@ df[['rechazados','faltantes','sobrantes','motivo']] = df['desc_limpia'].apply(pa
 
 df_filtrado_final = df
 # Opcional: ver resultado
-print(df_filtrado_final.head())
-
-
-
-
-
-
+df_filtrado_final.head()
 
 url = "https://drive.google.com/uc?export=download&id=1Ujb0dONC2U3E-fEgHKQoHg849yOBTGea"
 r = requests.get(url)
