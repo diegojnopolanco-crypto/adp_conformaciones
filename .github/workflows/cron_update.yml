@@ -1,8 +1,8 @@
 name: Actualizar Google Sheet
 
 on:
-  schedule:
-    - cron: '0 0,4,8,12,16,20 * * *'  # Cada 4 horas (UTC)
+  #schedule:
+  #  - cron: '0 0,4,8,12,16,20 * * *'  # Cada 4 horas (UTC)
   workflow_dispatch:  # Esto habilita el botón "Run workflow" en la interfaz
 
 jobs:
