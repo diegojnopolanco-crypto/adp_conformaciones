@@ -1,6 +1,7 @@
 name: Actualizar Google Sheet
 
 on:
+  workflow_dispatch:  # Esto habilita el botón "Run workflow" en la interfaz
   schedule:
     - cron: '0 0,4,8,12,16,20 * * *'  # Cada 4 horas (UTC)
 
