@@ -111,8 +111,8 @@ dt_numbers_filtrados = df_filtrado["dt_number"].unique()
 # 2️⃣ Filtrar en dbs solo las filas que correspondan a esos dt_number
 df_check = dbs[dbs["dt_number"].isin(dt_numbers_filtrados)]
 
-# 3️⃣ Encontrar dt_number que tienen status=5 en el df original
-dt_con_status_5 = df_check[df_check["status"] == 5]["dt_number"].unique()
+# 3️⃣ Encontrar dt_number que tienen status>2 en el df original
+dt_con_status_5 = df_check[df_check["status"] > 2]["dt_number"].unique()
 
 # 4️⃣ Mantener solo los dt_number que NO tienen status=5
 df_filtrado_final = df_filtrado[~df_filtrado["dt_number"].isin(dt_con_status_5)]
