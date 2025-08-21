@@ -148,7 +148,12 @@ con_otro_status = dbs.loc[dbs["status"] != 1, "legal_number"].unique()
 no_presentados = solo_1[~solo_1["legal_number"].isin(con_otro_status)]
 
 # 4. Asignar description
-no_presentados["description"] = "((R0,F0,S0,NO PRESENTADO-SIN RESPONSABLE))"
+no_presentados["description"] = "((R0,F0,S0,NO PRESENTADO-TTE))"
+
+# Para WALMART
+no_presentados.loc[
+    no_presentados["cliente"] == "WALMART CHILE S A", "description"
+] = "((R0,F0,S0,WALMART-Caja))"
 
 #Para las que están listas para procesar por Francis
 no_presentados.loc[no_presentados["pod_date"].notna(), "description"] = "((R0,F0,S0,CONFORMACION PENDIENTE-CAJA))"
@@ -158,10 +163,6 @@ no_presentados.loc[
     no_presentados["cliente"] == "CENCOSUD RETAIL S A", "description"
 ] = "((R0,F0,S0,CENCOSUD-Caja))"
 
-# Para WALMART
-no_presentados.loc[
-    no_presentados["cliente"] == "WALMART CHILE S A", "description"
-] = "((R0,F0,S0,WALMART-Caja))"
 no_presentados
 
 #Registrar Status 3 (atados)
