@@ -52,6 +52,7 @@ SELECT
     dt.dt_number,
     invoice.id AS invoice_id,
     invoice.legal_number,
+    invoice.submitter AS cliente,
     invoice_log.description,
     invoice_log.updated_by,
     invoice_log.invoice_status_id as "status",
@@ -67,11 +68,11 @@ JOIN dobetter_unilever.invoice
     ON dt.id = invoice.dt_id
 JOIN dobetter_unilever.invoice_log
     ON invoice.id = invoice_log.invoice_id
-WHERE invoice.updated_by IN (312, 316, 322, 3)
+  --WHERE invoice.updated_by IN (312, 316, 322, 3)
   -- AND invoice_log.invoice_status_id <> 5
-  AND invoice_log.description IS NOT NULL
-  AND invoice_log.description <> ''
-  AND invoice_log.its > '2024-01-01'
+  --AND invoice_log.description IS NOT NULL
+  --AND invoice_log.description <> ''
+  WHERE invoice_log.its > NOW() - INTERVAL '2 months'
 ORDER BY invoice_log.its DESC;
 """
 
@@ -93,35 +94,89 @@ except Exception as e:
     print(f"Error al ejecutar la consulta: {e}")
 
 dbs
+# dbs = resultado de la query
+
+#Hacer filtros comentados en la query
+# 1️⃣ Filtrar solo los updated_by específicos
+df_filtro1 = dbs[dbs["updated_by"].isin([312, 316, 322, 3])]
+
+# 2️⃣ Excluir status = 5
+df_filtro2 = df_filtro1[df_filtro1["status"] != 5]
+
+# 3️⃣ Quitar descripciones nulas
+df_filtro3 = df_filtro2[df_filtro2["description"].notna()]
+
+# 4️⃣ Quitar descripciones vacías
+df_final = df_filtro3[df_filtro3["description"] != ""]
 
 # Regex con grupo de captura
 pattern = r"(\(\(.*?\)\))"
 
 # Crear nueva columna solo con comentario objetivo
-dbs["desc_limpia"] = dbs["description"].str.extract(pattern)
+df_final["desc_limpia"] = df_final["description"].str.extract(pattern)
 
 # Filtrar filas que tienen comentario
-df_filtrado = dbs[dbs["desc_limpia"].notna()]
+df_filtrado = df_final[df_final["desc_limpia"].notna()]
 
 df_filtrado
 
-# 1️⃣ Obtener lista de dt_number únicos del df filtrado
-dt_numbers_filtrados = df_filtrado["dt_number"].unique()
+# 1️⃣ Obtener lista de FT únicos del df filtrado
+ft_filtrados = df_filtrado["legal_number"].unique()
 
-# 2️⃣ Filtrar en dbs solo las filas que correspondan a esos dt_number
-df_check = dbs[dbs["dt_number"].isin(dt_numbers_filtrados)]
+# 2️⃣ Filtrar en dbs solo las filas que correspondan a esos FT
+df_check = dbs[dbs["legal_number"].isin(ft_filtrados)]
 
-# 3️⃣ Encontrar dt_number que tienen status>2 en el df original
-dt_con_status_5 = df_check[df_check["status"] > 2]["dt_number"].unique()
+# 3️⃣ Encontrar legal_number que tienen status>2 en el df original
+dt_con_status = df_check[df_check["status"] > 2]["legal_number"].unique()
 
 # 4️⃣ Mantener solo los dt_number que NO tienen status=5
-df_filtrado_final = df_filtrado[~df_filtrado["dt_number"].isin(dt_con_status_5)]
+df_filtrado_final = df_filtrado[~df_filtrado["legal_number"].isin(dt_con_status)]
 
 # Resultado
 df_filtrado_final
 
+
+
+#Registrar Status 1 (no presentado)
+# 1. Filtrar solo las filas con status = 1
+solo_1 = dbs[dbs["status"] == 1]
+
+# 2. Buscar los legal_number que en el df original tengan status distintos a 1
+con_otro_status = dbs.loc[dbs["status"] != 1, "legal_number"].unique()
+
+# 3. Quitar esos legal_number de nuestro filtrado
+no_presentados = solo_1[~solo_1["legal_number"].isin(con_otro_status)]
+
+# Para CENCOSUD
+no_presentados.loc[
+    no_presentados["cliente"] == "CENCOSUD RETAIL S A", "description"
+] = "((R0,F0,S0,CENCOSUD-Caja))"
+
+# Para WALMART
+no_presentados.loc[
+    no_presentados["cliente"] == "WALMART CHILE S A", "description"
+] = "((R0,F0,S0,WALMART-Caja))"
+
+
+#Registrar Status 3 (atados)
+# 1. Filtrar solo las filas con status = 3
+solo_3 = dbs[dbs["status"] == 3]
+
+# 2. Buscar los legal_number que en el df original tengan status distintos a 3
+con_otro_status = dbs.loc[dbs["status"] != 3, "legal_number"].unique()
+
+# 3. Quitar esos legal_number de nuestro filtrado
+atadas = solo_3[~solo_3["legal_number"].isin(con_otro_status)]
+
+# 4. Asignar description
+atadas["description"] = "((R0,F0,S0,ATADA-TTE UL Caja))"
+
+
+df_final_total = pd.concat([df_filtrado_final, no_presentados, atadas], ignore_index=True)
+
+
 # Copiar DataFrame para no modificar el original
-df = df_filtrado_final.copy()
+df = df_final_total.copy()
 
 # Convertir desc_limpia a mayúsculas
 df['desc_limpia'] = df['desc_limpia'].str.upper()
@@ -149,6 +204,8 @@ df_filtrado_final['desc_limpia'] = df_filtrado_final['desc_limpia'].str.upper()
 # Seleccionamos solo las columnas que necesitamos
 df = df_filtrado_final[['dt_number','legal_number','status','updated_by_name','Fecha','desc_limpia']].copy()
 
+
+
 # Función para extraer los datos de desc_limpia
 def parse_desc(desc):
     # Quitar los doble paréntesis
@@ -168,6 +225,12 @@ df[['rechazados','faltantes','sobrantes','motivo']] = df['desc_limpia'].apply(pa
 df_filtrado_final = df
 # Opcional: ver resultado
 print(df_filtrado_final.head())
+
+
+
+
+
+
 
 url = "https://drive.google.com/uc?export=download&id=1Ujb0dONC2U3E-fEgHKQoHg849yOBTGea"
 r = requests.get(url)
