@@ -2,7 +2,7 @@ name: Actualizar Google Sheet
 
 on:
   schedule:
-    - cron: '0 0,4,8,12,16,20 * * *'  # Cada 4 horas (UTC)
+    - cron: '0 3,6,9,12,15,18,21 * * *'  # Cada 3 horas empezando a las 03:00 UTC
   workflow_dispatch:
 
 jobs:
